@@ -1,6 +1,7 @@
 <!--
 @component
 Beverage Cost Inflation Calculator
+Updated: March 1, 2026
 -->
 <script>
   const INFLATION_RATE = 0.183; // 18.3% inflation
