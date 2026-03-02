@@ -1,101 +1,341 @@
 <!--
 @component
-This is your page!
+Beverage Cost Inflation Calculator
 -->
 <script>
-  // Import all the news furniture components
-  import ArticleHeader from '$lib/components/ArticleHeader.svelte';
-  import ArticleBody from '$lib/components/ArticleBody.svelte';
-  import Image from '$lib/components/Image.svelte';
-  import RelatedLinks from '$lib/components/RelatedLinks.svelte';
+  const INFLATION_RATE = 0.183; // 18.3% inflation
 
-  // Article metadata
-  let headline = 'Become a force for good. Join our next class.';
-  let byline = 'NYCity News Service';
-  let pubDate = '2026-01-31';
+  // Reactive state for beverages list
+  let beverages = $state([
+    { id: 1, name: 'Coffee', lastYearPrice: 4.50 },
+    { id: 2, name: 'Smoothie', lastYearPrice: 7.25 },
+    { id: 3, name: 'Soda', lastYearPrice: 2.99 }
+  ]);
 
-  // Related stories
-  const relatedStories = [
-    { headline: 'How America\'s top news organizations escape rigid publishing systems to design beautiful data-driven stories on deadline.', href: 'https://palewi.re/docs/coding-the-news/' },
-    { headline: 'How to install, configure and use Visual Studio Code, GitHub and Copilot', href: 'https://palewi.re/docs/coding-the-news/scripts/week-1/' },
-    { headline: "How to publish a website with Node.JS and GitHub Actions", href:"https://palewi.re/docs/coding-the-news/scripts/week-2/"},
-  ];
+  let nextId = $state(4);
+  let newBeverageName = $state('');
+  let newBeveragePrice = $state('');
+
+  // Derived totals
+  let totalLastYear = $derived(beverages.reduce((sum, b) => sum + b.lastYearPrice, 0));
+  let totalThisYear = $derived(beverages.reduce((sum, b) => sum + b.thisYearPrice, 0));
+  let totalInflationCost = $derived(totalThisYear - totalLastYear);
+
+  // Add beverage to the list
+  function addBeverage() {
+    if (newBeverageName && newBeveragePrice) {
+      beverages.push({
+        id: nextId++,
+        name: newBeverageName,
+        lastYearPrice: parseFloat(newBeveragePrice)
+      });
+      newBeverageName = '';
+      newBeveragePrice = '';
+    }
+  }
+
+  // Remove beverage from list
+  function removeBeverage(id) {
+    beverages = beverages.filter(b => b.id !== id);
+  }
 </script>
 
-<!-- This sets the page title in the browser tab -->
 <svelte:head>
-  <title>{headline} | NYCity News Service</title>
-  <meta name="description" content="At the Craig Newmark Graduate School of Journalism at the City University of New York, change is in our DNA. That comes of being born in 2006, as the digital revolution was transforming our profession in ways none of us could have imagined." />
+  <title>Beverage Inflation Calculator</title>
+  <meta name="description" content="Calculate how much your favorite beverages cost with 18.3% inflation from last year to this year." />
 </svelte:head>
 
-<!-- Your page content goes here -->
 <div class="container">
-  
-  <!-- Article Header: Headline, byline, and publication date -->
-  <ArticleHeader
-    {headline}
-    {byline}
-    {pubDate}
-  />
+  <h1>🥤 Beverage Inflation Calculator</h1>
+  <p class="subtitle">See how much your favorite drinks cost with an 18.3% inflation rate</p>
 
-  <!-- Lead Image: Animated gif of students at the journalism school -->
-  <Image
-    src="/example-photo.gif"
-    alt="The Craig Newmark Graduate School of Journalism is at 219 West 40th Street in Midtown Manhattan."
-    caption="The Craig Newmark Graduate School of Journalism is at 219 West 40th Street in Midtown Manhattan."
-    credit="Craig Newmark Graduate School of Journalism"
-  />
+  <!-- Add New Beverage Section -->
+  <div class="card add-beverage-card">
+    <h2>Add a Beverage</h2>
+    <div class="form-group">
+      <input
+        type="text"
+        placeholder="Beverage name (e.g., Latte, Juice)"
+        bind:value={newBeverageName}
+        onkeydown={(e) => e.key === 'Enter' && addBeverage()}
+      />
+      <input
+        type="number"
+        placeholder="Last year's price ($)"
+        bind:value={newBeveragePrice}
+        step="0.01"
+        onkeydown={(e) => e.key === 'Enter' && addBeverage()}
+      />
+      <button onclick={addBeverage}>Add Beverage</button>
+    </div>
+  </div>
 
-  <!-- Article Body: The main story text with proper typography -->
-  <ArticleBody>
-    <p>
-      At the Craig Newmark Graduate School of Journalism at the City University of New York, change is in our DNA. That comes of being born in 2006, as the digital revolution was transforming our profession in ways none of us could have imagined.
-    </p>
+  <!-- Beverages List -->
+  <div class="beverages-grid">
+    {#each beverages as beverage (beverage.id)}
+      {@const thisYearPrice = beverage.lastYearPrice * (1 + INFLATION_RATE)}
+      {@const increase = thisYearPrice - beverage.lastYearPrice}
+      <div class="beverage-card">
+        <div class="card-header">
+          <h3>{beverage.name}</h3>
+          <button class="close-btn" onclick={() => removeBeverage(beverage.id)}>✕</button>
+        </div>
+        
+        <div class="price-row">
+          <span class="label">Last Year:</span>
+          <span class="price last-year">${beverage.lastYearPrice.toFixed(2)}</span>
+        </div>
+        
+        <div class="price-row highlight">
+          <span class="label">This Year:</span>
+          <span class="price this-year">${thisYearPrice.toFixed(2)}</span>
+        </div>
+        
+        <div class="price-row">
+          <span class="label">Increase (18.3%):</span>
+          <span class="price increase">+${increase.toFixed(2)}</span>
+        </div>
+      </div>
+    {/each}
+  </div>
 
-    <p>
-      We fashioned a school to teach the latest storytelling, entrepreneurial, and technological skills alongside reporting, writing, and ethics. Beyond that, we’ve crafted a culture that spurns complacency, that isn’t afraid to pivot before the ground under us shifts.
-    </p>
-
-    <p>
-      Our mission is to serve the public interest – by training new journalists from varied economic, racial, and cultural backgrounds who will bring much-needed diversity to newsrooms, by helping mid-career journalists retool their skills, and by partnering with other media organizations to find new paths to excellence.
-    </p>
-
-    <p>
-      Our low tuition rates, along with the added backing of private donors, allow candidates for our master’s degrees in journalism and engagement journalism to receive a world-class education at an affordable price. We also offer a unique bilingual master’s in journalism for students fluent in English and Spanish.
-    </p>
-
-    <p>
-      Our three media centers provide research, training, thought leadership, industry meet-ups, and financial support for quality journalistic work.
-    </p>
-
-    <p>
-      We also offer a robust professional education program through regular evening and weekend workshops. And we support in-depth reporting projects of professional journalists through fellowship grants.
-    </p>
-
-    <p>
-      Classes are led by accomplished full-time faculty and adjuncts, who tap their networks to help students and graduates find internships, freelance opportunities and — the ultimate prize — jobs.
-    </p>
-
-    <p>
-      At a time when our profession is reeling from financial pressures and lack of trust, the Newmark Graduate School of Journalism is committed to producing the next generation of skilled, ethically minded, and diverse journalists.
-    </p>
-
-    <p>
-      We invite you to be part of our world.
-    </p>
-  </ArticleBody>
-
-  <!-- Related Stories: Links to other articles -->
-  <RelatedLinks
-    title="Related Stories"
-    links={relatedStories}
-  />
+  <!-- Totals Summary -->
+  <div class="card totals-card">
+    <h2>Summary</h2>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <span class="summary-label">Total (Last Year):</span>
+        <span class="summary-value">${totalLastYear.toFixed(2)}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Total (This Year):</span>
+        <span class="summary-value highlight">${totalThisYear.toFixed(2)}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Total Inflation Cost:</span>
+        <span class="summary-value cost">+${totalInflationCost.toFixed(2)}</span>
+      </div>
+    </div>
+  </div>
 
 </div>
 
 <style>
-  /* Styles here only apply to this page */
+  :global(body) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+  }
+
   .container {
-    padding: var(--spacing-lg) var(--spacing-md);
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--spacing-lg, 2rem);
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    color: white;
+    text-align: center;
+  }
+
+  .subtitle {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+  }
+
+  .card h2 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: #333;
+    font-size: 1.5rem;
+  }
+
+  .add-beverage-card .form-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 1rem;
+  }
+
+  input {
+    padding: 0.875rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  button {
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  }
+
+  button:active {
+    transform: translateY(0);
+  }
+
+  .close-btn {
+    padding: 0.5rem 0.75rem;
+    background: #ff6b6b;
+    font-size: 0.875rem;
+  }
+
+  .close-btn:hover {
+    background: #ff5252;
+  }
+
+  .beverages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .beverage-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .beverage-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+  }
+
+  .card-header h3 {
+    margin: 0;
+    color: #333;
+    flex: 1;
+  }
+
+  .price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .price-row.highlight {
+    background: #f8f9ff;
+    padding: 0.75rem;
+    border-radius: 6px;
+    border-bottom: none;
+    margin: 0.5rem 0;
+  }
+
+  .label {
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .price {
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  .price.last-year {
+    color: #667eea;
+  }
+
+  .price.this-year {
+    color: #764ba2;
+    font-size: 1.3rem;
+  }
+
+  .price.increase {
+    color: #ff6b6b;
+  }
+
+  .totals-card {
+    background: white;
+    border-top: 4px solid linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+  }
+
+  .summary-label {
+    color: #666;
+    font-weight: 500;
+  }
+
+  .summary-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #667eea;
+  }
+
+  .summary-value.highlight {
+    color: #764ba2;
+  }
+
+  .summary-value.cost {
+    color: #ff6b6b;
+  }
+
+  @media (max-width: 640px) {
+    .add-beverage-card .form-group {
+      grid-template-columns: 1fr;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+    }
+
+    .beverages-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
